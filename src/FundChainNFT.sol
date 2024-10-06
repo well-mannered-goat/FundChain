@@ -5,7 +5,7 @@ import {ERC721} from "../lib/openzeppelin-contracts/contracts/token/ERC721/ERC72
 import {Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract FundChainNFT is ERC721, Ownable {
-    uint256 tokenId;
+    uint256 private tokenId;
     address private immutable admin;
     error Balance_Already_Positive();
 
