@@ -6,10 +6,11 @@ import {Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable.so
 
 contract FundChainNFT is ERC721, Ownable {
     uint256 private tokenId;
-    address private immutable admin;
+    address private immutable ADMIN =
+        0x9f0Bc747Cc7Df76826Ba38Ad90E99dA6C17F613C;
     error Balance_Already_Positive();
 
-    constructor() ERC721("FundChain", "FC") Ownable(admin) {
+    constructor() ERC721("FundChain", "FC") Ownable(ADMIN) {
         tokenId = 0;
     }
 

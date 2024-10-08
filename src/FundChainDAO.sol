@@ -6,35 +6,44 @@ import {FundChainNFT} from "./FundChainNFT.sol";
 
 contract FundChainDAO is Ownable {
     struct Proposal {
-        uint32 votes;       
-        uint16[] regions;    
-        uint256 id;          
-        string description; 
+        uint32 votes;
+        uint16[] regions;
+        uint256 id;
+        string description;
     }
 
     error Not_Enough_Balance_To_Vote();
     error Can_Only_Vote_Once();
-    error Proposal_Crossed_Deadline();
-    event NewProposal(address indexed proposer);
+    error Voting_Currently_Disabled();
+
+    event NewProposal(uint256 id);
     event ProposalAccepted(uint256 id);
-    bool public votingEnabled;
 
     modifier onlyWhenVotingEnabled() {
-        require(votingEnabled, "Voting is currently disabled");
+        if (!votingEnabled) revert Voting_Currently_Disabled();
         _;
     }
 
     Proposal[] public proposals;
-    mapping(address => bool) public hasVoted;
-    uint256 public proposalId = 0;
-    uint256 public currId = 0;
     FundChainNFT private VoteToken;
 
-    constructor(address NFTAddress) Ownable(msg.sender) {
+    mapping(address => bool) public hasVoted;
+
+    uint256 public proposalId = 0;
+    uint256 public currId = 0;
+    bool public votingEnabled;
+    address private immutable ADMIN =
+        0x9f0Bc747Cc7Df76826Ba38Ad90E99dA6C17F613C;
+
+    constructor(address NFTAddress) Ownable(ADMIN) {
         VoteToken = FundChainNFT(NFTAddress);
+        votingEnabled = true;
     }
 
-    function createProposal(string memory description, uint16[] memory regions) external onlyOwner {
+    function createProposal(
+        string memory description,
+        uint16[] memory regions
+    ) external onlyOwner {
         proposals.push(
             Proposal({
                 votes: 0,
@@ -43,10 +52,10 @@ contract FundChainDAO is Ownable {
                 regions: regions
             })
         );
+        emit NewProposal(proposalId);
         proposalId++;
-        emit NewProposal(msg.sender);
     }
-    
+
     function enableVoting() external onlyOwner {
         votingEnabled = true;
     }
@@ -54,6 +63,7 @@ contract FundChainDAO is Ownable {
     function disableVoting() external onlyOwner {
         votingEnabled = false;
     }
+
     function voteFor(uint256 id) external onlyWhenVotingEnabled {
         if (VoteToken.balanceOf(msg.sender) == 0)
             revert Not_Enough_Balance_To_Vote();
@@ -64,7 +74,7 @@ contract FundChainDAO is Ownable {
         hasVoted[msg.sender] = true;
     }
 
-    function selectProposal() external onlyOwner  {
+    function selectProposal() external onlyOwner returns (uint256) {
         require(proposals.length > 0, "No proposals available");
         require(!votingEnabled, "Voting is currently enabled");
         votingEnabled = false;
@@ -76,6 +86,16 @@ contract FundChainDAO is Ownable {
             }
         }
         emit ProposalAccepted(proposals[selectedProposalId].id);
+
+        return selectedProposalId;
+    }
+
+    function getAdmin() public view returns (address) {
+        return ADMIN;
+    }
+
+    function totalProposals() public view returns (uint256) {
+        return proposals.length;
     }
 
     // function checkUpkeep(
@@ -88,7 +108,7 @@ contract FundChainDAO is Ownable {
     //     if (currId >= proposals.length) return (false, "0x0");
 
     //     Proposal memory proposal = proposals[currId];
-    //     upkeepNeeded = (proposal.state == 3); 
+    //     upkeepNeeded = (proposal.state == 3);
     //     return (upkeepNeeded, "0x0");
     // }
 
@@ -102,7 +122,7 @@ contract FundChainDAO is Ownable {
     //     uint256 votesAgainst = 0;
 
     //     if (votesAgainst >= votesFor) {
-    //         proposal.state = 1; 
+    //         proposal.state = 1;
     //     } else {
     //         proposal.state = 2;
     //     }
