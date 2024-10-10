@@ -28,7 +28,7 @@ contract FundChainDAO is Ownable {
 
     Proposal[] public proposals;
     FundChainNFT private VoteToken;
-    ZkVerify zkVerifier;
+    IZkVerify zkVerifier;
 
     mapping(address => bool) public hasVoted;
 
@@ -41,7 +41,7 @@ contract FundChainDAO is Ownable {
     constructor(address NFTAddress, address verifierAddr) Ownable(ADMIN) {
         VoteToken = FundChainNFT(NFTAddress);
         votingEnabled = true;
-        zkVerifier = ZkVerify(verifierAddr);
+        zkVerifier = IZkVerify(verifierAddr);
     }
 
     function createProposal(
@@ -102,4 +102,8 @@ contract FundChainDAO is Ownable {
     function totalProposals() public view returns (uint256) {
         return proposals.length;
     }
+}
+
+interface IZkVerify {
+    function isVerified(address user) external view returns (bool);
 }
