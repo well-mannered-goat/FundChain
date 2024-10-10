@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import {Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {FundChainNFT} from "./FundChainNFT.sol";
+import {ZkVerify} from "../zk-proof/ZkVerify.sol";
 
 contract FundChainDAO is Ownable {
     struct Proposal {
@@ -15,6 +16,7 @@ contract FundChainDAO is Ownable {
     error Not_Enough_Balance_To_Vote();
     error Can_Only_Vote_Once();
     error Voting_Currently_Disabled();
+    error Must_Give_Zk_ID_Proof();
 
     event NewProposal(uint256 id);
     event ProposalAccepted(uint256 id);
@@ -26,6 +28,7 @@ contract FundChainDAO is Ownable {
 
     Proposal[] public proposals;
     FundChainNFT private VoteToken;
+    ZkVerify zkVerifier;
 
     mapping(address => bool) public hasVoted;
 
@@ -35,9 +38,10 @@ contract FundChainDAO is Ownable {
     address private immutable ADMIN =
         0x9f0Bc747Cc7Df76826Ba38Ad90E99dA6C17F613C;
 
-    constructor(address NFTAddress) Ownable(ADMIN) {
+    constructor(address NFTAddress, address verifierAddr) Ownable(ADMIN) {
         VoteToken = FundChainNFT(NFTAddress);
         votingEnabled = true;
+        zkVerifier = ZkVerify(verifierAddr);
     }
 
     function createProposal(
@@ -68,8 +72,9 @@ contract FundChainDAO is Ownable {
         if (VoteToken.balanceOf(msg.sender) == 0)
             revert Not_Enough_Balance_To_Vote();
         if (hasVoted[msg.sender]) revert Can_Only_Vote_Once();
-        Proposal storage proposal = proposals[id];
+        if (!zkVerifier.isVerified(msg.sender)) revert Must_Give_Zk_ID_Proof();
 
+        Proposal storage proposal = proposals[id];
         proposal.votes += 1;
         hasVoted[msg.sender] = true;
     }
@@ -97,47 +102,4 @@ contract FundChainDAO is Ownable {
     function totalProposals() public view returns (uint256) {
         return proposals.length;
     }
-
-    // function checkUpkeep(
-    //     bytes calldata /* checkData */
-    // )
-    //     external
-    //     view
-    //     returns (bool upkeepNeeded, bytes memory /* performData */)
-    // {
-    //     if (currId >= proposals.length) return (false, "0x0");
-
-    //     Proposal memory proposal = proposals[currId];
-    //     upkeepNeeded = (proposal.state == 3);
-    //     return (upkeepNeeded, "0x0");
-    // }
-
-    // function performUpkeep(bytes calldata /* performData */) external {
-    //     execute(currId);
-    // }
-
-    // function execute(uint256 id) internal {
-    //     Proposal storage proposal = proposals[id];
-    //     uint256 votesFor = proposal.votes;
-    //     uint256 votesAgainst = 0;
-
-    //     if (votesAgainst >= votesFor) {
-    //         proposal.state = 1;
-    //     } else {
-    //         proposal.state = 2;
-    //     }
-
-    //     currId++;
-    //     removeProposal(id);
-    // }
-
-    // function removeProposal(uint256 index) internal {
-    //     require(index < proposals.length, "Index out of bounds");
-    //     proposals[index] = proposals[proposals.length - 1];
-    //     proposals.pop();
-    // }
-
-    // function getProposalsLength() external view returns (uint256) {
-    //     return proposals.length;
-    // }
 }
