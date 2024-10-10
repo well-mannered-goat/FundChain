@@ -7,7 +7,7 @@ import {FundChainNFT} from "../src/FundChainNFT.sol";
 import {ZkVerify} from "../zk-proof/ZkVerify.sol";
 import {Groth16Verifier} from "../zk-proof/verifier.sol";
 
-contract DeployFundChainDAO is Script {
+contract DeployFundChain is Script {
     FundChainDAO fundChainDAO;
     FundChainNFT fundChainNFT;
     ZkVerify zkVerifier;

@@ -4,18 +4,18 @@ pragma solidity ^0.8.18;
 import {Test} from "forge-std/Test.sol";
 import {FundChainDAO} from "../src/FundChainDAO.sol";
 import {FundChainNFT} from "../src/FundChainNFT.sol";
-import {DeployFundChainDAO} from "../script/deployFundChainDAO.s.sol";
+import {DeployFundChain} from "../script/deployFundChain.s.sol";
 
 contract FundChainDAOTest is Test {
     FundChainDAO fundChainDAO;
     FundChainNFT fundChainNFT;
-    DeployFundChainDAO deployer;
+    DeployFundChain deployer;
 
     uint16[] regions;
     address admin;
 
     function setUp() external {
-        deployer = new DeployFundChainDAO();
+        deployer = new DeployFundChain();
         (fundChainDAO, fundChainNFT) = deployer.run();
         regions.push(1);
 
